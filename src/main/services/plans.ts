@@ -1,6 +1,6 @@
-import type { TvInfo } from '@shared/types'
+import type { ApkInfo, TvInfo } from '@shared/types'
 import type { ErrorContext } from '../adb/errors'
-import { readApk } from '../apk/inspect'
+import { inspectApk, readApk } from '../apk/inspect'
 import { ZipReader } from '../zip'
 import type { RegisteredFile } from './files'
 import type { InstallPlan } from './install'
@@ -46,5 +46,11 @@ export interface PlanResult {
 
 export async function buildPlan(file: RegisteredFile, tv: TvInfo | undefined): Promise<PlanResult> {
   if (file.kind === 'apk') return { plan: await planForApk(file, tv), cleanup: async () => undefined }
+  throw new Error('Bundles (.apks, .xapk, .apkm) aren’t supported yet.')
+}
+
+/** Reads the info card for any supported file. */
+export async function inspectFile(file: RegisteredFile, tv: TvInfo | undefined, signal?: AbortSignal): Promise<ApkInfo> {
+  if (file.kind === 'apk') return inspectApk(file, signal, tv?.locale)
   throw new Error('Bundles (.apks, .xapk, .apkm) aren’t supported yet.')
 }

@@ -602,3 +602,23 @@ table.apps td.actions {
   border-radius: 8px;
   border: 1px solid var(--border);
 }
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12.5px;
+}
+.facts span {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.facts span.good {
+  color: var(--ok);
+}
+.facts span.warn {
+  color: var(--warn);
+}

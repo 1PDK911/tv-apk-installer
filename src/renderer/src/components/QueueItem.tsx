@@ -5,6 +5,11 @@ import { api, formatBytes } from '../util'
 import { Notice, ProgressBar, useJobProgress } from './common'
 import type { Item } from './InstallView'
 
+function abiSummary(info: { abis: string[]; bundle?: { splits: { type: string; value?: string }[] } }): string {
+  const abis = info.bundle ? info.bundle.splits.filter((s) => s.type === 'abi').map((s) => s.value ?? '') : info.abis
+  return abis.length ? abis.join(' · ') : 'Any processor'
+}
+
 const REMEDY: Record<InstallRemedy, { button: string; warning: string; options: InstallOptions; tone: 'warn' | 'bad' }> = {
   uninstall_reinstall: {
     button: 'Uninstall & reinstall',
@@ -215,10 +220,28 @@ export function QueueItem({
         </Notice>
       )}
 
+      {info && item.status !== 'installed' && (
+        <div className="facts">
+          <span title="Minimum Android version / version the app targets">
+            {info.minSdk ? `${androidName(info.minSdk).replace(/ \(API \d+\)/, '')}+` : 'Any Android'}
+            {info.targetSdk ? ` · targets API ${info.targetSdk}` : ''}
+          </span>
+          <span title="Processor types the app has native code for">
+            {info.abis.length || info.bundle ? abiSummary(info) : 'Any processor'}
+          </span>
+          <span className={info.tv.leanbackLauncher ? 'good' : 'warn'}>
+            {info.tv.leanbackLauncher ? '✓ Built for TV' : 'Phone app'}
+          </span>
+          {item.inspection?.installed?.installed && (
+            <span>Installed: v{item.inspection.installed.versionName ?? item.inspection.installed.versionCode}</span>
+          )}
+        </div>
+      )}
+
       {info && (
         <div>
           <button className="btn link small" onClick={() => setShowDetails(!showDetails)} aria-expanded={showDetails}>
-            {showDetails ? 'Hide app details' : 'Show app details'}
+            {showDetails ? 'Hide details' : 'More details'}
           </button>
           {showDetails && (
             <dl className="kv small" style={{ marginTop: 8 }}>
@@ -236,9 +259,16 @@ export function QueueItem({
               <dd className="mono">{info.abis.length ? info.abis.join(', ') : 'none (runs on any processor)'}</dd>
               <dt>Built for TV</dt>
               <dd>
-                {info.tv.leanbackLauncher ? 'Yes — shows on the TV home screen' : 'No TV launcher entry'}
-                {info.tv.leanbackFeature !== 'absent' ? ` · leanback feature ${info.tv.leanbackFeature}` : ''}
+                {info.tv.leanbackLauncher ? 'Yes — shows on the TV home screen (LEANBACK_LAUNCHER)' : 'No — no TV launcher entry'}
+                {` · leanback feature ${info.tv.leanbackFeature}`}
+                {info.tv.touchscreenRequired ? ' · requires touchscreen' : ''}
               </dd>
+              {(info.testOnly || info.debuggable) && (
+                <>
+                  <dt>Build</dt>
+                  <dd>{[info.testOnly && 'test-only', info.debuggable && 'debuggable'].filter(Boolean).join(', ')}</dd>
+                </>
+              )}
               <dt>Size</dt>
               <dd>{formatBytes(info.sizeBytes)}</dd>
               <dt>SHA-256</dt>

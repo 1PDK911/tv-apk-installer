@@ -13,10 +13,10 @@ import type { Log } from './log'
 import type { AdbManager } from './services/adbManager'
 import type { DeviceService } from './services/devices'
 import { downloadPlatformTools } from './services/platformTools'
-import { inspectApk } from './apk/inspect'
 import type { FileRegistry } from './services/files'
 import { Installer } from './services/install'
-import { buildPlan } from './services/plans'
+import { buildPlan, inspectFile } from './services/plans'
+import { preflight } from './services/preflight'
 import type { Store } from './services/store'
 
 export interface Services {
@@ -165,14 +165,22 @@ export function registerIpc(s: Services): void {
     inspect: async (jobId, fileId, tvId) => {
       const file = s.files.get(fileId)
       if (!file) throw new InputError('That file is no longer in the queue.')
-      void tvId
+      const target = tvId === null ? undefined : s.devices.requireConnected(str(tvId, 'TV'))
+      const connected = target && !('error' in target) ? target : undefined
       return jobs.run(job(jobId), async (signal) => {
+        let info
         try {
-          if (file.kind !== 'apk') return { checks: [], error: 'Bundles (.apks, .xapk, .apkm) aren’t supported yet.' }
-          return { info: await inspectApk(file, signal), checks: [] }
+          info = await inspectFile(file, connected?.tv.info, signal)
         } catch (e) {
           return { checks: [], error: (e as Error).message }
         }
+        if (!connected) return { info, checks: [] }
+        const adb = s.adb.client()
+        const pkg = adb
+          ? await new Installer(adb, s.log).installedPackage(connected.serial, info.packageName, signal).catch(() => undefined)
+          : undefined
+        const installed = { installed: !!pkg, versionName: pkg?.versionName, versionCode: pkg?.versionCode }
+        return { info, installed, checks: preflight(info, connected.tv.info, installed) }
       })
     },
     install: async (jobId, fileId, tvId, options) => {
