@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sdk:sdk-repository xmlns:sdk="http://schemas.android.com/sdk/android/repo/repository2/03" xmlns:common="http://schemas.android.com/repository/android/common/02" xmlns:generic="http://schemas.android.com/repository/android/generic/02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <channel id="channel-0">stable</channel>
+  <channel id="channel-3">canary</channel>
+  <remotePackage path="platform-tools">
+    <type-details xsi:type="generic:genericDetailsType"/>
+    <revision><major>37</major><minor>0</minor><micro>0</micro><preview>1</preview></revision>
+    <display-name>Android SDK Platform-Tools</display-name>
+    <channelRef ref="channel-3"/>
+    <archives>
+      <archive><complete><size>1</size><checksum type="sha1">0000000000000000000000000000000000000000</checksum><url>platform-tools_r37.0.0-rc1-win.zip</url></complete><host-os>windows</host-os></archive>
+    </archives>
+  </remotePackage>
+  <remotePackage path="platform-tools">
+    <type-details xsi:type="generic:genericDetailsType"/>
+    <revision><major>36</major><minor>0</minor><micro>2</micro></revision>
+    <display-name>Android SDK Platform-Tools</display-name>
+    <uses-license ref="android-sdk-license"/>
+    <channelRef ref="channel-0"/>
+    <archives>
+      <archive>
+        <complete>
+          <size>7012345</size>
+          <checksum type="sha1">a1b2c3d4e5f60718293a4b5c6d7e8f9012345678</checksum>
+          <url>platform-tools_r36.0.2-darwin.zip</url>
+        </complete>
+        <host-os>macosx</host-os>
+      </archive>
+      <archive>
+        <complete>
+          <size>6912345</size>
+          <checksum type="sha1">1234567890abcdef1234567890abcdef12345678</checksum>
+          <url>platform-tools_r36.0.2-win.zip</url>
+        </complete>
+        <host-os>windows</host-os>
+      </archive>
+      <archive>
+        <complete>
+          <size>7112345</size>
+          <checksum type="sha1">abcdefabcdefabcdefabcdefabcdefabcdefabcd</checksum>
+          <url>platform-tools_r36.0.2-linux.zip</url>
+        </complete>
+        <host-os>linux</host-os>
+      </archive>
+    </archives>
+  </remotePackage>
+  <remotePackage path="build-tools;36.0.0">
+    <channelRef ref="channel-0"/>
+  </remotePackage>
+</sdk:sdk-repository>

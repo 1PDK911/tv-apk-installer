@@ -1,0 +1,6 @@
+List of devices attached
+192.168.1.42:5555      device product:sabrina model:Chromecast device:sabrina transport_id:3
+192.168.1.50:5555      unauthorized transport_id:4
+adb-4C111FDAQ00XYZ-AbCdEf._adb-tls-connect._tcp device product:kirkwood model:Google_TV_Streamer device:kirkwood transport_id:5
+192.168.1.77:41235     offline transport_id:6
+

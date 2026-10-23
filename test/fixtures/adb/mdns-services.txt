@@ -1,0 +1,4 @@
+List of discovered mdns services
+adb-4C111FDAQ00XYZ-AbCdEf	_adb-tls-connect._tcp	192.168.1.60:41235
+adb-4C111FDAQ00XYZ-AbCdEf	_adb-tls-pairing._tcp	192.168.1.60:37145
+adb-GZ1234567-Q1w2E3	_adb._tcp	192.168.1.42:5555
