@@ -256,7 +256,11 @@ export function QueueItem({
                 {androidName(info.minSdk)} / {androidName(info.targetSdk)}
               </dd>
               <dt>Native code</dt>
-              <dd className="mono">{info.abis.length ? info.abis.join(', ') : 'none (runs on any processor)'}</dd>
+              <dd className="mono">
+                {info.abis.length || info.bundle?.splits.some((x) => x.type === 'abi')
+                  ? abiSummary(info).split(' · ').join(', ')
+                  : 'none (runs on any processor)'}
+              </dd>
               <dt>Built for TV</dt>
               <dd>
                 {info.tv.leanbackLauncher ? 'Yes — shows on the TV home screen (LEANBACK_LAUNCHER)' : 'No — no TV launcher entry'}

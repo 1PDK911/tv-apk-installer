@@ -1,3 +1,4 @@
+import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BrowserWindow, Menu, app, session, type IpcMainInvokeEvent } from 'electron'
 import { EVENTS } from '@shared/api'
@@ -71,8 +72,12 @@ if (!app.requestSingleInstanceLock()) {
     })
     session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => cb(false))
     session.defaultSession.setPermissionCheckHandler(() => false)
+    // No spellchecker: on some platforms it would download dictionaries from Google.
+    session.defaultSession.setSpellCheckerEnabled(false)
 
     const dataDir = app.getPath('userData')
+    // Leftovers from an interrupted bundle install.
+    await rm(join(dataDir, 'tmp'), { recursive: true, force: true }).catch(() => undefined)
     const log = new Log()
     const store = new Store(join(dataDir, 'settings.json'))
     await store.load()
@@ -107,7 +112,7 @@ if (!app.requestSingleInstanceLock()) {
       if (quitting) return
       quitting = true
       e.preventDefault()
-      void adb.shutdown().finally(() => app.quit())
+      void Promise.allSettled([adb.shutdown(), rm(join(dataDir, 'tmp'), { recursive: true, force: true })]).finally(() => app.quit())
     })
   })
 

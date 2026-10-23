@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { type BrowserWindow, type IpcMainInvokeEvent, dialog, ipcMain, net, shell } from 'electron'
 import { API_METHODS, EVENTS, EXTERNAL_LINKS, type Api, type ApiMethod } from '@shared/api'
 import type { ConnectRequest, InstallOptions, PairRequest } from '@shared/types'
@@ -56,6 +57,7 @@ function installOptions(x: unknown): InstallOptions {
 
 export function registerIpc(s: Services): void {
   const jobs = new Jobs()
+  const workDir = join(s.dataDir, 'tmp')
   const send = (channel: string, payload: unknown): void => {
     const w = s.window()
     if (w && !w.isDestroyed()) w.webContents.send(channel, payload)
@@ -170,7 +172,7 @@ export function registerIpc(s: Services): void {
       return jobs.run(job(jobId), async (signal) => {
         let info
         try {
-          info = await inspectFile(file, connected?.tv.info, signal)
+          info = await inspectFile(file, connected?.tv.info, workDir, signal)
         } catch (e) {
           return { checks: [], error: (e as Error).message }
         }
@@ -198,7 +200,7 @@ export function registerIpc(s: Services): void {
         progress(['Preparing'], 0)
         let planned
         try {
-          planned = await buildPlan(file, target.tv.info)
+          planned = await buildPlan(file, target.tv.info, workDir, signal)
         } catch (e) {
           return { ok: false, message: (e as Error).message }
         }

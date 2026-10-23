@@ -32,6 +32,15 @@ export function preflight(info: ApkInfo, tv: TvInfo | undefined, installed?: Ins
     })
   }
 
+  if (info.bundle && tv?.sdk && tv.sdk < 21 && info.bundle.splits.length > 1) {
+    checks.push({
+      id: 'bundle',
+      level: 'block',
+      title: 'Split bundles need Android 5.0 or newer',
+      detail: 'This TV is too old to install split APKs. Look for a single “universal” APK instead.'
+    })
+  }
+
   const appAbis = info.bundle ? info.bundle.splits.filter((s) => s.type === 'abi').map((s) => s.value!).filter(Boolean) : info.abis
   const allAbis = [...new Set([...info.abis, ...appAbis])]
   if (tv?.abis.length && !abiCompatible(allAbis, tv.abis)) {
