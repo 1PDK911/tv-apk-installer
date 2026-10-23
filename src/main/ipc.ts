@@ -1,7 +1,8 @@
-import { type BrowserWindow, type IpcMainInvokeEvent, ipcMain, net, shell } from 'electron'
+import { type BrowserWindow, type IpcMainInvokeEvent, dialog, ipcMain, net, shell } from 'electron'
 import { API_METHODS, EVENTS, EXTERNAL_LINKS, type Api, type ApiMethod } from '@shared/api'
-import type { ConnectRequest, PairRequest } from '@shared/types'
+import type { ConnectRequest, InstallOptions, PairRequest } from '@shared/types'
 import {
+  isValidPackageName,
   validateIp,
   validatePairingCode,
   validatePort,
@@ -12,12 +13,17 @@ import type { Log } from './log'
 import type { AdbManager } from './services/adbManager'
 import type { DeviceService } from './services/devices'
 import { downloadPlatformTools } from './services/platformTools'
+import { inspectApk } from './apk/inspect'
+import type { FileRegistry } from './services/files'
+import { Installer } from './services/install'
+import { buildPlan } from './services/plans'
 import type { Store } from './services/store'
 
 export interface Services {
   adb: AdbManager
   devices: DeviceService
   store: Store
+  files: FileRegistry
   log: Log
   dataDir: string
   isTrustedSender: (e: IpcMainInvokeEvent) => boolean
@@ -39,7 +45,14 @@ function job(x: unknown): string {
   return x
 }
 
-type Handlers = { [K in ApiMethod]: (...args: unknown[]) => ReturnType<Api[K]> | Awaited<ReturnType<Api[K]>> }
+type Handlers = { [K in ApiMethod]: (...args: unknown[]) => ReturnType<Api[K]> | Awaited<ReturnType<Api[K]>> } & {
+  addFiles: (...args: unknown[]) => ReturnType<Api['pickFiles']>
+}
+
+function installOptions(x: unknown): InstallOptions {
+  const o = (x ?? {}) as Record<string, unknown>
+  return { uninstallFirst: o.uninstallFirst === true, bypassLowTargetSdk: o.bypassLowTargetSdk === true, allowTest: o.allowTest === true }
+}
 
 export function registerIpc(s: Services): void {
   const jobs = new Jobs()
@@ -134,6 +147,72 @@ export function registerIpc(s: Services): void {
     },
     getSelectedTv: () => s.store.get().selectedTvId ?? null,
 
+    pickFiles: async () => {
+      const w = s.window()
+      const opts = {
+        title: 'Choose apps to install',
+        properties: ['openFile', 'multiSelections'] as Array<'openFile' | 'multiSelections'>,
+        filters: [
+          { name: 'Android apps', extensions: ['apk', 'apks', 'xapk', 'apkm'] },
+          { name: 'All files', extensions: ['*'] }
+        ]
+      }
+      const r = w ? await dialog.showOpenDialog(w, opts) : await dialog.showOpenDialog(opts)
+      return r.canceled ? { added: [], rejected: [] } : s.files.add(r.filePaths)
+    },
+    addFiles: (paths) => s.files.add(paths),
+    removeFile: (fileId) => s.files.remove(fileId),
+    inspect: async (jobId, fileId, tvId) => {
+      const file = s.files.get(fileId)
+      if (!file) throw new InputError('That file is no longer in the queue.')
+      void tvId
+      return jobs.run(job(jobId), async (signal) => {
+        try {
+          if (file.kind !== 'apk') return { checks: [], error: 'Bundles (.apks, .xapk, .apkm) aren’t supported yet.' }
+          return { info: await inspectApk(file, signal), checks: [] }
+        } catch (e) {
+          return { checks: [], error: (e as Error).message }
+        }
+      })
+    },
+    install: async (jobId, fileId, tvId, options) => {
+      const id = job(jobId)
+      const file = s.files.get(fileId)
+      if (!file) throw new InputError('That file is no longer in the queue.')
+      const target = s.devices.requireConnected(str(tvId, 'TV'))
+      if ('error' in target) return { ok: false, message: target.error }
+      const adb = s.adb.client()
+      if (!adb) return { ok: false, message: 'adb isn’t set up yet.' }
+      const opts = installOptions(options)
+      const progress = (steps: string[], stepIndex: number, detail?: string): void =>
+        send(EVENTS.progress, { jobId: id, stage: steps[stepIndex], steps, stepIndex, detail })
+      return jobs.run(id, async (signal) => {
+        progress(['Preparing'], 0)
+        let planned
+        try {
+          planned = await buildPlan(file, target.tv.info)
+        } catch (e) {
+          return { ok: false, message: (e as Error).message }
+        }
+        try {
+          s.log.info(`Installing ${file.name} (${planned.plan.packageName}) on ${target.tv.name}`)
+          const result = await new Installer(adb, s.log).install(target.serial, planned.plan, opts, progress, signal)
+          if (result.ok) void s.devices.loadInfo(target.tv.id) // free storage changed
+          return result
+        } finally {
+          await planned.cleanup()
+        }
+      })
+    },
+    launchApp: async (tvId, pkg) => {
+      const target = s.devices.requireConnected(str(tvId, 'TV'))
+      if ('error' in target) return { ok: false, message: target.error }
+      if (!isValidPackageName(pkg)) throw new InputError('Invalid package name.')
+      const adb = s.adb.client()
+      if (!adb) return { ok: false, message: 'adb isn’t set up yet.' }
+      return new Installer(adb, s.log).launch(target.serial, pkg)
+    },
+
     cancelJob: (jobId) => jobs.cancel(job(jobId)),
     getLog: () => s.log.all(),
     clearLog: () => s.log.clear(),
@@ -151,7 +230,7 @@ export function registerIpc(s: Services): void {
   }
 
   for (const method of API_METHODS) {
-    const fn = handlers[method] as (...args: unknown[]) => unknown
+    const fn = (handlers as Record<string, unknown>)[method] as (...args: unknown[]) => unknown
     ipcMain.handle(`api:${method}`, async (event, ...args) => {
       if (!s.isTrustedSender(event)) throw new Error('Untrusted sender')
       try {

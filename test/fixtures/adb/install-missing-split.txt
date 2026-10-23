@@ -1,0 +1,2 @@
+Performing Split Install
+adb: failed to install app: Failure [INSTALL_FAILED_MISSING_SPLIT: Missing split for com.example.splitapp]

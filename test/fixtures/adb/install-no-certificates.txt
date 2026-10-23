@@ -1,0 +1,2 @@
+Performing Streamed Install
+adb: failed to install unsigned.apk: Failure [INSTALL_PARSE_FAILED_NO_CERTIFICATES: Failed collecting certificates for /data/app/vmdl1.tmp/base.apk: Failed to collect certificates from /data/app/vmdl1.tmp/base.apk: Attempt to get length of null array]

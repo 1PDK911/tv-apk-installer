@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.example.phoneonly" android:versionCode="70" android:versionName="7.0-beta">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="22" />
+    <uses-feature android:name="android.hardware.touchscreen" />
+    <application android:label="Phone Only" android:icon="@mipmap/ic_launcher" android:testOnly="true" android:hasCode="false">
+        <activity android:name="org.example.phoneonly.Main">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

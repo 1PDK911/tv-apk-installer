@@ -8,6 +8,7 @@ import type {
   TvState,
   TvView
 } from '@shared/types'
+import { displayModel } from '@shared/status'
 import type { AdbClient } from '../adb/client'
 import { type ConnectOutcome, type DeviceEntry, serialNoFromMdnsTransport } from '../adb/parse'
 import type { Log } from '../log'
@@ -164,7 +165,7 @@ export class DeviceService {
     this.infoLoading.add(id)
     try {
       const info = await adb.info(tv.serial, { timeoutMs: 20_000 })
-      const model = [info.manufacturer, info.model].filter(Boolean).join(' ') || tv.model
+      const model = displayModel(info.manufacturer, info.model) ?? tv.model
       this.set(id, { info, model, serialNo: info.serialNo ?? tv.serialNo, lastConnectedAt: Date.now() })
       await this.persist()
     } catch (e) {

@@ -1,0 +1,2 @@
+Performing Streamed Install
+adb: failed to install app.apk: Failure [INSTALL_FAILED_OLDER_SDK: Failed parse during installPackageLI: /data/app/vmdl1234.tmp/base.apk (at Binary XML file line #7): Requires newer sdk version #30 (current version is #28)]

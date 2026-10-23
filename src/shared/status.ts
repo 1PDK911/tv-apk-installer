@@ -55,3 +55,10 @@ export function describeState(state: TvState, method: ConnectMethod): StatusCopy
       return { label: 'Disconnected', tone: 'muted', nextStep: 'Click Connect to reconnect to this TV.' }
   }
 }
+
+/** "Google" + "Google TV Streamer" → "Google TV Streamer"; "Sony" + "BRAVIA 4K" → "Sony BRAVIA 4K". */
+export function displayModel(manufacturer: string | undefined, model: string | undefined): string | undefined {
+  if (!model) return manufacturer
+  if (!manufacturer || model.toLowerCase().startsWith(manufacturer.toLowerCase())) return model
+  return `${manufacturer} ${model}`
+}

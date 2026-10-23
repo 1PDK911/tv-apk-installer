@@ -4,6 +4,11 @@
 
 import type {
   ActionResult,
+  InstallOptions,
+  InstallResult,
+  Inspection,
+  LaunchResult,
+  QueuedFile,
   AdbStatus,
   ConnectRequest,
   DiscoveredService,
@@ -34,6 +39,15 @@ export interface Api {
   selectTv(tvId: string | null): Promise<void>
   getSelectedTv(): Promise<string | null>
 
+  // files & installing
+  pickFiles(): Promise<{ added: QueuedFile[]; rejected: string[] }>
+  /** Implemented in the preload: resolves dropped File objects to paths, then registers them. */
+  addDroppedFiles(files: File[]): Promise<{ added: QueuedFile[]; rejected: string[] }>
+  removeFile(fileId: string): Promise<void>
+  inspect(jobId: string, fileId: string, tvId: string | null): Promise<Inspection>
+  install(jobId: string, fileId: string, tvId: string, options: InstallOptions): Promise<InstallResult>
+  launchApp(tvId: string, packageName: string): Promise<LaunchResult>
+
   // misc
   cancelJob(jobId: string): Promise<void>
   getLog(): Promise<LogEntry[]>
@@ -48,7 +62,7 @@ export interface Api {
   onProgress(cb: (p: JobProgress) => void): () => void
 }
 
-export type ApiMethod = Exclude<keyof Api, 'onTvs' | 'onLog' | 'onProgress'>
+export type ApiMethod = Exclude<keyof Api, 'onTvs' | 'onLog' | 'onProgress' | 'addDroppedFiles'>
 
 /** Every invokable channel. The preload refuses anything not in this list. */
 export const API_METHODS = [
@@ -67,13 +81,19 @@ export const API_METHODS = [
   'refreshInfo',
   'selectTv',
   'getSelectedTv',
+  'pickFiles',
+  'addFiles',
+  'removeFile',
+  'inspect',
+  'install',
+  'launchApp',
   'cancelJob',
   'getLog',
   'clearLog',
   'openExternal',
   'getSetupGuideSeen',
   'setSetupGuideSeen'
-] as const satisfies readonly ApiMethod[]
+] as const satisfies readonly (ApiMethod | 'addFiles')[]
 
 export const EVENTS = { tvs: 'evt:tvs', log: 'evt:log', progress: 'evt:progress' } as const
 

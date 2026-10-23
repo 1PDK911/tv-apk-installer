@@ -78,6 +78,9 @@ export interface JobProgress {
   /** 0..1 when known, otherwise undefined for an indeterminate bar. */
   fraction?: number
   detail?: string
+  /** For multi-step operations: all step names and the current one. */
+  steps?: string[]
+  stepIndex?: number
 }
 
 export interface PairRequest {
@@ -105,4 +108,118 @@ export interface PlatformToolsDownloadResult {
   ok: boolean
   message: string
   status?: AdbStatus
+}
+
+export type FileKind = 'apk' | 'apks' | 'xapk' | 'apkm'
+
+/** A file the user dropped or picked. Paths stay in the main process; the UI only sees ids. */
+export interface QueuedFile {
+  id: string
+  name: string
+  size: number
+  kind: FileKind
+}
+
+export type InstallRemedy = 'uninstall_reinstall' | 'bypass_low_target_sdk' | 'allow_test'
+
+export interface InstallFailure {
+  /** e.g. INSTALL_FAILED_OLDER_SDK, or a synthetic code like CONNECTION_LOST. */
+  code: string
+  title: string
+  explanation: string
+  fix: string
+  remedy?: InstallRemedy
+  raw: string
+}
+
+export interface InstallOptions {
+  uninstallFirst?: boolean
+  bypassLowTargetSdk?: boolean
+  allowTest?: boolean
+}
+
+export interface InstallResult {
+  ok: boolean
+  cancelled?: boolean
+  message: string
+  packageName?: string
+  versionName?: string
+  failure?: InstallFailure
+}
+
+export interface LaunchResult {
+  ok: boolean
+  message: string
+}
+
+export interface TvSuitability {
+  /** Has an activity with the LEANBACK_LAUNCHER category (shows on the TV home screen). */
+  leanbackLauncher: boolean
+  /** <uses-feature android:name="android.software.leanback">: required / optional / absent. */
+  leanbackFeature: 'required' | 'optional' | 'absent'
+  /** Declares a required touchscreen (a strong sign of a phone-only app). */
+  touchscreenRequired: boolean
+  /** Has a TV banner image. */
+  hasBanner: boolean
+}
+
+export interface ApkInfo {
+  fileId: string
+  fileName: string
+  kind: FileKind
+  packageName: string
+  label?: string
+  versionName?: string
+  versionCode?: number
+  minSdk?: number
+  targetSdk?: number
+  /** data: URL of the launcher icon (PNG/WebP/JPEG only; adaptive vector icons aren't rendered). */
+  icon?: string
+  /** Native ABIs the app ships code for. Empty = no native code (runs on any CPU). */
+  abis: string[]
+  sizeBytes: number
+  sha256: string
+  tv: TvSuitability
+  testOnly: boolean
+  debuggable: boolean
+  /** Bundle details (.apks/.xapk/.apkm). */
+  bundle?: BundleInfo
+}
+
+export interface SplitInfo {
+  name: string
+  /** "base", "abi", "density", "language", "feature" or "other". */
+  type: 'base' | 'abi' | 'density' | 'language' | 'feature' | 'other'
+  value?: string
+  sizeBytes: number
+  selected: boolean
+}
+
+export interface BundleInfo {
+  splits: SplitInfo[]
+  obbs: { name: string; sizeBytes: number }[]
+  /** Explains how splits were chosen for the selected TV. */
+  selectionNote?: string
+}
+
+export type CheckLevel = 'ok' | 'info' | 'warn' | 'block'
+
+export interface PreflightCheck {
+  id: 'api' | 'abi' | 'storage' | 'installed' | 'downgrade' | 'phone' | 'target' | 'test' | 'signature' | 'bundle'
+  level: CheckLevel
+  title: string
+  detail?: string
+}
+
+export interface InstalledState {
+  installed: boolean
+  versionName?: string
+  versionCode?: number
+}
+
+export interface Inspection {
+  info?: ApkInfo
+  error?: string
+  checks: PreflightCheck[]
+  installed?: InstalledState
 }

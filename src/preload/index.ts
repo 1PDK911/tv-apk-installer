@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
 import { API_METHODS, EVENTS, type Api } from '@shared/api'
 
 const api: Record<string, unknown> = {}
@@ -11,6 +11,16 @@ function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
   ipcRenderer.on(channel, listener)
   return () => ipcRenderer.removeListener(channel, listener)
 }
+
+// Electron no longer exposes File.path; resolve dropped files to paths here.
+api.addDroppedFiles = (files: File[]) =>
+  ipcRenderer.invoke(
+    'api:addFiles',
+    Array.from(files)
+      .map((f) => webUtils.getPathForFile(f))
+      .filter(Boolean)
+  )
+delete api.addFiles
 
 api.onTvs = (cb: Parameters<Api['onTvs']>[0]) => subscribe(EVENTS.tvs, cb)
 api.onLog = (cb: Parameters<Api['onLog']>[0]) => subscribe(EVENTS.log, cb)

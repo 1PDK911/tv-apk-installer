@@ -1,0 +1,2 @@
+Performing Streamed Install
+adb: failed to install app.apk: Failure [INSTALL_FAILED_INSUFFICIENT_STORAGE: Failed to override installation location]

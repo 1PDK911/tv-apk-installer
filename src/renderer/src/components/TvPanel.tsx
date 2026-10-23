@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { TvView } from '@shared/types'
-import { describeState } from '@shared/status'
+import { describeState, displayModel } from '@shared/status'
 import { validateHostPort, validateTvName } from '@shared/validation'
 import { api, errorText, formatBytes, newJobId } from '../util'
 import { Notice, ProgressBar, StatusChip } from './common'
@@ -155,7 +155,7 @@ export function TvPanel({ tv, onPairAgain }: { tv: TvView; onPairAgain: () => vo
           <h3>TV details</h3>
           <dl className="kv">
             <dt>Model</dt>
-            <dd>{[info.manufacturer, info.model].filter(Boolean).join(' ') || '—'}</dd>
+            <dd>{displayModel(info.manufacturer, info.model) ?? '—'}</dd>
             <dt>Android</dt>
             <dd>
               {info.androidVersion ?? '—'}

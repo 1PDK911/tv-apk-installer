@@ -1,0 +1,2 @@
+Performing Streamed Install
+adb: failed to install app.apk: Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package com.example.tvapp signatures do not match newer version; ignoring!]

@@ -163,3 +163,40 @@ export function shQuote(arg: string): string {
   if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(arg)) return arg
   return `'${arg.replace(/'/g, `'\\''`)}'`
 }
+
+// ---------- dumpsys package / pm ----------
+
+export interface InstalledPackage {
+  versionName?: string
+  versionCode?: number
+  minSdk?: number
+  targetSdk?: number
+  codePath?: string
+}
+
+/** Parses `dumpsys package <pkg>`. Returns undefined when the package isn't installed. */
+export function parsePackageDump(out: string, pkg: string): InstalledPackage | undefined {
+  // Only look inside the "Package [pkg]" block (dumpsys can also list other packages).
+  const start = out.indexOf(`Package [${pkg}]`)
+  if (start < 0) return undefined
+  const rest = out.slice(start)
+  const nextPkg = rest.indexOf('\n  Package [', 1)
+  const block = nextPkg > 0 ? rest.slice(0, nextPkg) : rest
+  const vc = /versionCode=(\d+)/.exec(block)?.[1]
+  const min = /minSdk=(\d+)/.exec(block)?.[1]
+  const target = /targetSdk=(\d+)/.exec(block)?.[1]
+  return {
+    versionName: /versionName=([^\r\n]*)/.exec(block)?.[1]?.trim(),
+    versionCode: vc ? Number(vc) : undefined,
+    minSdk: min ? Number(min) : undefined,
+    targetSdk: target ? Number(target) : undefined,
+    codePath: /codePath=([^\r\n]+)/.exec(block)?.[1]?.trim()
+  }
+}
+
+/** Parses `cmd package resolve-activity --brief …`; returns "pkg/.Activity" or undefined. */
+export function parseResolveActivity(out: string): string | undefined {
+  const ls = lines(out).map((l) => l.trim()).filter(Boolean)
+  const last = ls[ls.length - 1]
+  return last && /^[A-Za-z0-9_.]+\/[A-Za-z0-9_.$]+$/.test(last) ? last : undefined
+}

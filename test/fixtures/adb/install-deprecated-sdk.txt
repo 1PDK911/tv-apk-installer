@@ -1,0 +1,2 @@
+Performing Streamed Install
+adb: failed to install app.apk: Failure [INSTALL_FAILED_DEPRECATED_SDK_VERSION: App package must target at least SDK version 23, but found 22]

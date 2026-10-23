@@ -3,6 +3,7 @@ import type { AdbStatus, TvView } from '@shared/types'
 import { describeState } from '@shared/status'
 import { AdbSetup } from './components/AdbSetup'
 import { AddTvDialog } from './components/AddTvDialog'
+import { InstallView } from './components/InstallView'
 import { StatusChip } from './components/common'
 import { LogDrawer } from './components/LogDrawer'
 import { SetupGuide } from './components/SetupGuide'
@@ -153,18 +154,13 @@ export function App() {
                 )}
                 <div className="muted small">adb {adb.version} · {adb.source === 'app-data' ? 'downloaded by this app' : adb.path}</div>
               </div>
+              {selected && <TvPanel key={selected.id} tv={selected} onPairAgain={() => setShowAdd(true)} />}
             </div>
             <div className="stack">
-              {selected ? (
-                <TvPanel key={selected.id} tv={selected} onPairAgain={() => setShowAdd(true)} />
-              ) : (
-                <div className="card muted">Add a TV to get started.</div>
-              )}
-              {view === 'install' ? (
-                <div className="card muted">Installing APKs arrives in the next milestone.</div>
-              ) : (
-                <div className="card muted">The app manager arrives in a later milestone.</div>
-              )}
+              <div hidden={view !== 'install'}>
+                <InstallView tv={selected} />
+              </div>
+              {view === 'apps' && <div className="card muted">The app manager arrives in a later milestone.</div>}
             </div>
           </div>
         )}

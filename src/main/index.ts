@@ -6,6 +6,7 @@ import { registerIpc } from './ipc'
 import { Log } from './log'
 import { AdbManager } from './services/adbManager'
 import { DeviceService } from './services/devices'
+import { FileRegistry } from './services/files'
 import { Store } from './services/store'
 
 const isDev = !app.isPackaged && !!process.env.ELECTRON_RENDERER_URL
@@ -82,7 +83,7 @@ if (!app.requestSingleInstanceLock()) {
       log,
       (tvs) => mainWindow?.webContents.send(EVENTS.tvs, tvs)
     )
-    registerIpc({ adb, devices, store, log, dataDir, isTrustedSender, window: () => mainWindow })
+    registerIpc({ adb, devices, store, files: new FileRegistry(), log, dataDir, isTrustedSender, window: () => mainWindow })
 
     mainWindow = createWindow()
     mainWindow.on('closed', () => (mainWindow = undefined))

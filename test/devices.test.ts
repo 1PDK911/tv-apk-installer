@@ -69,7 +69,7 @@ describe('DeviceService', () => {
     expect(res.ok).toBe(true)
     expect(res.tv?.state).toBe('connected')
     expect(res.tv?.info).toMatchObject({ sdk: 34, abis: ['arm64-v8a', 'armeabi-v7a', 'armeabi'], density: 320, freeBytes: 2056560 * 1024 })
-    expect(store.get().tvs[0]).toMatchObject({ name: 'Living room', model: 'Google Google TV Streamer', serialNo: '4C111FDAQ00XYZ' })
+    expect(store.get().tvs[0]).toMatchObject({ name: 'Living room', model: 'Google TV Streamer', serialNo: '4C111FDAQ00XYZ' })
   })
 
   it('wireless: rediscovers a changed port via mDNS', async () => {

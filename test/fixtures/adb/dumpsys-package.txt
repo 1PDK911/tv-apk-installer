@@ -1,0 +1,16 @@
+Activity Resolver Table:
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        7d2b1f2 com.example.tvapp/.MainActivity filter 4b1c3e0
+
+Packages:
+  Package [com.example.tvapp] (3e4a1b2):
+    userId=10123
+    pkg=Package{8c1d2e3 com.example.tvapp}
+    codePath=/data/app/~~abc==/com.example.tvapp-xyz==
+    resourcePath=/data/app/~~abc==/com.example.tvapp-xyz==
+    primaryCpuAbi=arm64-v8a
+    versionCode=5 minSdk=21 targetSdk=33
+    minExtensionVersions=[]
+    versionName=1.4.0
+    usesNonSdkApi=false
