@@ -1,0 +1,3 @@
+package:/data/app/~~x==/com.example.splitapp-y==/split_config.xhdpi.apk
+package:/data/app/~~x==/com.example.splitapp-y==/base.apk
+package:/data/app/~~x==/com.example.splitapp-y==/split_config.arm64_v8a.apk

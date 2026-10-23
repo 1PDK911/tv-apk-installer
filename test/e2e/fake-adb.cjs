@@ -96,6 +96,9 @@ if (st.approveAt && Date.now() > st.approveAt) {
         )
       if (sh === 'df -k /data') return out('Filesystem     1K-blocks    Used Available Use% Mounted on\n/dev/block/dm-5 25165824 18874368 6291456  75% /data')
       if (sh === 'wm density') return out('Physical density: 320')
+      if (sh === 'dumpsys package packages')
+        return out('Packages:\n' + Object.entries(st.installed).map(([pkg, p]) => `  Package [${pkg}] (abc):\n    versionCode=${p.versionCode} minSdk=21 targetSdk=33\n    versionName=${p.versionName}\n    installerPackageName=${pkg === 'com.netflix.ninja' ? 'com.android.vending' : 'null'}\n`).join(''))
+      if (sh === 'pm list packages -3 -d') return out('')
       if (sh.startsWith('dumpsys package ')) {
         const pkg = sh.split(' ')[2]
         const p = st.installed[pkg]

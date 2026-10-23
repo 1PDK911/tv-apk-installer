@@ -1,0 +1,3 @@
+package:com.netflix.ninja versionCode:120
+package:com.example.tvapp versionCode:5
+package:org.videolan.vlc versionCode:13050407

@@ -1,0 +1,22 @@
+Packages:
+  Package [com.netflix.ninja] (aa11):
+    userId=10050
+    versionCode=120 minSdk=24 targetSdk=33
+    versionName=8.120.0 build 18 50618
+    installerPackageName=com.android.vending
+    firstInstallTime=2025-01-02 10:00:00
+    lastUpdateTime=2026-09-30 08:12:44
+  Package [com.example.tvapp] (bb22):
+    userId=10123
+    versionCode=5 minSdk=21 targetSdk=33
+    versionName=1.4.0
+    installerPackageName=null
+    lastUpdateTime=2026-10-20 19:00:00
+  Package [org.videolan.vlc] (cc33):
+    versionCode=13050407 minSdk=17 targetSdk=34
+    versionName=3.6.0
+    installerPackageName=com.android.shell
+
+Hidden system packages:
+  Package [com.google.android.tvlauncher] (dd44):
+    versionName=9.9

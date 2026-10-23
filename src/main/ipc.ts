@@ -1,7 +1,8 @@
 import { join } from 'node:path'
 import { type BrowserWindow, type IpcMainInvokeEvent, dialog, ipcMain, net, shell } from 'electron'
 import { API_METHODS, EVENTS, EXTERNAL_LINKS, type Api, type ApiMethod } from '@shared/api'
-import type { ConnectRequest, InstallOptions, PairRequest } from '@shared/types'
+import type { ConnectRequest, InstallOptions, PairRequest, TvView } from '@shared/types'
+import type { AdbClient } from './adb/client'
 import {
   isValidPackageName,
   validateIp,
@@ -15,6 +16,7 @@ import type { AdbManager } from './services/adbManager'
 import type { DeviceService } from './services/devices'
 import { downloadPlatformTools } from './services/platformTools'
 import type { FileRegistry } from './services/files'
+import { AppManager } from './services/apps'
 import { Installer } from './services/install'
 import { buildPlan, inspectFile } from './services/plans'
 import { preflight } from './services/preflight'
@@ -58,6 +60,19 @@ function installOptions(x: unknown): InstallOptions {
 export function registerIpc(s: Services): void {
   const jobs = new Jobs()
   const workDir = join(s.dataDir, 'tmp')
+  const savedPaths = new Set<string>()
+  type Target = { serial: string; tv: TvView; adb: AdbClient }
+  const connectedTarget = (tvId: unknown): Target | { error: string } => {
+    const target = s.devices.requireConnected(str(tvId, 'TV'))
+    const adb = s.adb.client()
+    if ('error' in target) return { error: target.error }
+    if (!adb) return { error: 'adb isn’t set up yet.' }
+    return { serial: target.serial, tv: target.tv, adb }
+  }
+  const pkgName = (x: unknown): string => {
+    if (!isValidPackageName(x)) throw new InputError('Invalid package name.')
+    return x
+  }
   const send = (channel: string, payload: unknown): void => {
     const w = s.window()
     if (w && !w.isDestroyed()) w.webContents.send(channel, payload)
@@ -221,6 +236,75 @@ export function registerIpc(s: Services): void {
       const adb = s.adb.client()
       if (!adb) return { ok: false, message: 'adb isn’t set up yet.' }
       return new Installer(adb, s.log).launch(target.serial, pkg)
+    },
+
+    listApps: async (jobId, tvId) => {
+      const t = connectedTarget(tvId)
+      if ('error' in t) throw new InputError(t.error)
+      return jobs.run(job(jobId), (signal) => new AppManager(t.adb).list(t.serial, signal))
+    },
+    forceStopApp: async (tvId, pkg) => {
+      const t = connectedTarget(tvId)
+      if ('error' in t) return { ok: false, message: t.error }
+      await new Installer(t.adb, s.log).forceStop(t.serial, pkgName(pkg))
+      return { ok: true, message: 'Stopped.' }
+    },
+    uninstallApp: async (tvId, pkg) => {
+      const t = connectedTarget(tvId)
+      if ('error' in t) return { ok: false, message: t.error }
+      const r = await new Installer(t.adb, s.log).uninstall(t.serial, pkgName(pkg))
+      if (r.ok) void s.devices.loadInfo(t.tv.id)
+      return r.ok
+        ? { ok: true, message: 'Uninstalled.' }
+        : {
+            ok: false,
+            message: /DELETE_FAILED_DEVICE_POLICY_MANAGER/.test(r.output)
+              ? 'This app is a device administrator; turn that off in the TV’s security settings first.'
+              : `The TV refused: ${r.output.split('\n').pop()}`
+          }
+    },
+    saveAppCopy: async (jobId, tvId, pkg, versionName) => {
+      const id = job(jobId)
+      const t = connectedTarget(tvId)
+      if ('error' in t) return { ok: false, message: t.error }
+      const name = pkgName(pkg)
+      const mgr = new AppManager(t.adb)
+      const paths = await mgr.apkPaths(t.serial, name)
+      if (!paths.length) return { ok: false, message: 'The TV didn’t report any APK files for this app.' }
+      const version = typeof versionName === 'string' ? versionName.replace(/[^\w.-]/g, '_').slice(0, 40) : ''
+      const ext = paths.length > 1 ? 'apks' : 'apk'
+      const w = s.window()
+      const opts = {
+        title: 'Save a copy of the app',
+        defaultPath: `${name}${version ? `-${version}` : ''}.${ext}`,
+        filters: [{ name: paths.length > 1 ? 'Split APK bundle' : 'Android app', extensions: [ext] }]
+      }
+      const choice = w ? await dialog.showSaveDialog(w, opts) : await dialog.showSaveDialog(opts)
+      if (choice.canceled || !choice.filePath) return { ok: false, message: 'Cancelled.' }
+      try {
+        const r = await jobs.run(id, (signal) =>
+          mgr.saveCopy(
+            t.serial,
+            name,
+            choice.filePath!,
+            workDir,
+            (done, total) =>
+              send(EVENTS.progress, { jobId: id, stage: `Copying ${Math.min(done + 1, total)} of ${total}`, fraction: done / total }),
+            signal
+          )
+        )
+        savedPaths.add(r.path)
+        return {
+          ok: true,
+          path: r.path,
+          message: r.files > 1 ? `Saved ${r.files} split APKs as one .apks file.` : 'Saved.'
+        }
+      } catch (e) {
+        return { ok: false, message: (e as Error).name === 'AbortError' || /Cancel/.test((e as Error).message) ? 'Cancelled.' : (e as Error).message }
+      }
+    },
+    showInFolder: (p) => {
+      if (typeof p === 'string' && savedPaths.has(p)) shell.showItemInFolder(p)
     },
 
     cancelJob: (jobId) => jobs.cancel(job(jobId)),

@@ -200,3 +200,50 @@ export function parseResolveActivity(out: string): string | undefined {
   const last = ls[ls.length - 1]
   return last && /^[A-Za-z0-9_.]+\/[A-Za-z0-9_.$]+$/.test(last) ? last : undefined
 }
+
+export interface UserApp {
+  packageName: string
+  versionName?: string
+  versionCode?: number
+  installer?: string
+  firstInstallTime?: string
+  lastUpdateTime?: string
+  enabled: boolean
+}
+
+/** `pm list packages -3 [--show-versioncode]` → package names (and codes). */
+export function parsePmList(out: string): Array<{ packageName: string; versionCode?: number }> {
+  const result: Array<{ packageName: string; versionCode?: number }> = []
+  for (const line of lines(out)) {
+    const m = /^package:(?:.*=)?([A-Za-z][\w.]*)(?:\s+versionCode:(\d+))?\s*$/.exec(line.trim())
+    if (m) result.push({ packageName: m[1], versionCode: m[2] ? Number(m[2]) : undefined })
+  }
+  return result
+}
+
+/** Parses all "Package [x]" blocks from `dumpsys package packages`. */
+export function parseAllPackages(out: string): Map<string, Omit<UserApp, 'packageName' | 'enabled'>> {
+  const map = new Map<string, Omit<UserApp, 'packageName' | 'enabled'>>()
+  const re = /^ {2}Package \[([^\]]+)\][^\n]*\n([\s\S]*?)(?=^ {2}Package \[|^\S|(?![\s\S]))/gm
+  for (const m of out.matchAll(re)) {
+    const block = m[2]
+    const vc = /versionCode=(\d+)/.exec(block)?.[1]
+    const installer = /installerPackageName=([^\s]+)/.exec(block)?.[1]
+    map.set(m[1], {
+      versionName: /versionName=([^\r\n]*)/.exec(block)?.[1]?.trim(),
+      versionCode: vc ? Number(vc) : undefined,
+      installer: installer && installer !== 'null' ? installer : undefined,
+      firstInstallTime: /firstInstallTime=([^\r\n]+)/.exec(block)?.[1]?.trim(),
+      lastUpdateTime: /lastUpdateTime=([^\r\n]+)/.exec(block)?.[1]?.trim()
+    })
+  }
+  return map
+}
+
+/** `pm path <pkg>` → APK paths on the TV (base first). Rejects anything odd. */
+export function parsePmPath(out: string): string[] {
+  const paths = lines(out)
+    .map((l) => /^package:(\/[\w/.~=+@-]+\.apk)\s*$/.exec(l.trim())?.[1])
+    .filter((p): p is string => !!p && !p.includes('/../'))
+  return paths.sort((a, b) => Number(b.endsWith('/base.apk')) - Number(a.endsWith('/base.apk')))
+}

@@ -223,3 +223,13 @@ export interface Inspection {
   checks: PreflightCheck[]
   installed?: InstalledState
 }
+
+export interface TvApp {
+  packageName: string
+  versionName?: string
+  versionCode?: number
+  /** Human-readable source: "Play Store", "Sideloaded", or the installer package. */
+  source: string
+  enabled: boolean
+  lastUpdateTime?: string
+}

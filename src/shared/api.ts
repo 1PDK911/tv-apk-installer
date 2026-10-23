@@ -9,6 +9,7 @@ import type {
   Inspection,
   LaunchResult,
   QueuedFile,
+  TvApp,
   AdbStatus,
   ConnectRequest,
   DiscoveredService,
@@ -47,6 +48,13 @@ export interface Api {
   inspect(jobId: string, fileId: string, tvId: string | null): Promise<Inspection>
   install(jobId: string, fileId: string, tvId: string, options: InstallOptions): Promise<InstallResult>
   launchApp(tvId: string, packageName: string): Promise<LaunchResult>
+
+  // app manager
+  listApps(jobId: string, tvId: string): Promise<TvApp[]>
+  forceStopApp(tvId: string, packageName: string): Promise<ActionResult>
+  uninstallApp(tvId: string, packageName: string): Promise<ActionResult>
+  saveAppCopy(jobId: string, tvId: string, packageName: string, versionName: string | null): Promise<ActionResult & { path?: string }>
+  showInFolder(path: string): Promise<void>
 
   // misc
   cancelJob(jobId: string): Promise<void>
@@ -87,6 +95,11 @@ export const API_METHODS = [
   'inspect',
   'install',
   'launchApp',
+  'listApps',
+  'forceStopApp',
+  'uninstallApp',
+  'saveAppCopy',
+  'showInFolder',
   'cancelJob',
   'getLog',
   'clearLog',

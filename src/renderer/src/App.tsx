@@ -3,6 +3,7 @@ import type { AdbStatus, TvView } from '@shared/types'
 import { describeState } from '@shared/status'
 import { AdbSetup } from './components/AdbSetup'
 import { AddTvDialog } from './components/AddTvDialog'
+import { AppsView } from './components/AppsView'
 import { InstallView } from './components/InstallView'
 import { StatusChip } from './components/common'
 import { LogDrawer } from './components/LogDrawer'
@@ -160,7 +161,7 @@ export function App() {
               <div hidden={view !== 'install'}>
                 <InstallView tv={selected} />
               </div>
-              {view === 'apps' && <div className="card muted">The app manager arrives in a later milestone.</div>}
+              {view === 'apps' && <AppsView tv={selected} />}
             </div>
           </div>
         )}
