@@ -19,5 +19,5 @@ const alias = { '@shared': resolve('src/shared') }
 export default defineConfig({
   main: { plugins: [externalizeDepsPlugin()], resolve: { alias } },
   preload: { plugins: [externalizeDepsPlugin()], resolve: { alias } },
-  renderer: { root: 'src/renderer', resolve: { alias }, plugins: [react(), cspMeta()] }
+  renderer: { root: 'src/renderer', resolve: { alias }, plugins: [react(), cspMeta()], build: { minify: true } }
 })

@@ -1,3 +1,4 @@
+import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { candidatePaths } from '../src/main/adb/locate'
 import { hostOs, latestUrl, parseRepository } from '../src/main/services/platformTools'
@@ -45,7 +46,7 @@ describe('candidatePaths (Windows)', () => {
 
 describe('safeJoin', () => {
   it('blocks zip-slip', () => {
-    expect(safeJoin('/tmp/x', 'platform-tools/adb')).toBe('/tmp/x/platform-tools/adb')
+    expect(safeJoin('/tmp/x', 'platform-tools/adb')).toBe(join(resolve('/tmp/x'), 'platform-tools', 'adb'))
     expect(safeJoin('/tmp/x', '../evil')).toBeUndefined()
     expect(safeJoin('/tmp/x', 'a/../../evil')).toBeUndefined()
     expect(safeJoin('/tmp/x', '/etc/passwd')).toBeUndefined()
