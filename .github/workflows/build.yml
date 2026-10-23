@@ -6,6 +6,11 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+    inputs:
+      draft_release:
+        description: Also create a draft GitHub release with the installers
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -50,11 +55,12 @@ jobs:
 
   draft-release:
     needs: windows-installer
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.draft_release
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v5
         with:
           name: windows-installers
@@ -63,6 +69,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/*.exe dist/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" --draft --title "TV APK Installer ${GITHUB_REF_NAME#v}" \
+          TAG="$GITHUB_REF_NAME"
+          case "$TAG" in v*) ;; *) TAG="v$(jq -r .version "$GITHUB_WORKSPACE/package.json" 2>/dev/null || echo 0.0.0)" ;; esac
+          gh release create "$TAG" dist/*.exe dist/SHA256SUMS.txt --target "$GITHUB_SHA" \
+            --repo "$GITHUB_REPOSITORY" --draft --title "TV APK Installer ${TAG#v}" \
             --notes "Unsigned Windows build. See the README for how to get past the SmartScreen warning. SHA-256 checksums are in SHA256SUMS.txt."
